@@ -1,0 +1,209 @@
+---
+title: "Descriptive Analysis"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+# Install and load necessary libraries
+#install.packages("vcd")
+library(vcd)
+#install.packages("corrplot")
+library(corrplot)
+#install.packages("ggplot2")
+library(ggplot2)
+#install.packages("GGally")
+library(GGally)
+#install.packages("gridExtra")
+library(gridExtra)
+#install.packages("igraph")
+library(igraph)
+
+#install.packages("tidyverse")
+library(tidyverse)    # all things tidy
+#install.packages("haven")
+library(haven)
+
+#install.packages("pander")
+library(pander)       # nice looking genderal tabulations
+#install.packages("furniture")
+library(furniture)    # nice Table1() descriptives
+#install.packages("texreg")
+library(texreg)       # Convert Regression Output to LaTeX or HTML Tables
+
+#install.packages("psych")
+library(psych)        # contains some useful functions, like headTail
+#install.packages("sjstats")
+library(sjstats)      # ICC calculations
+#install.packages("sjPlot")
+library(sjPlot)       # Visualization for Models
+
+#install.packages("lme4")
+library(lme4)         # non-linear mixed-effects models
+#install.packages("lmerTest")
+library(lmerTest)
+#install.packages("effects")
+library(effects)      # Effect displays for Models
+#install.packages("effectsize")
+library(effectsize)
+#install.packages("interactions")
+library(interactions)
+#install.packages("performance")
+library(performance)
+#install.packages("modeest")
+library(modeest)
+```
+
+\newpage 
+
+# Descriptive Analysis Plan:
+
+## Objective: Conduct a descriptive analysis of the dataset, focusing on categorical variables and providing summary statistics for the GPA variable.
+
+**Load and Inspect Data:**
+
+* Load the dataset.
+
+* Inspect the structure of the dataset, checking for the data types and missing values.
+
+**Data Cleaning:**
+
+* Ensure that the 'gpa' column is treated as a numeric variable.
+
+**Descriptive Statistics for GPA:**
+
+Compute and present the following summary statistics for the 'gpa' column:
+
+* Mean
+
+* Median
+
+* etc.
+
+**Distribution of GPA:**
+
+* Create a histogram to visualize the distribution of GPA.
+
+**Descriptive Statistics for Categorical Variables:**
+
+* Identify and list all categorical variables in the dataset.
+
+For each categorical variable, compute and present the following summary statistics:
+
+* Number of levels (unique values)
+
+* Frequency distribution of each level
+
+\newpage 
+
+# Data Cleaning
+
+```{r show_col_types = FALSE}
+data <- read_csv("data_tidy.csv")
+head(data)
+```
+
+```{r}
+# List of columns to exclude from conversion
+columns_to_exclude <- c("id", "timestamp", "field_of_study", "university", "gpa")
+
+# List of columns to convert to categorical
+columns_to_convert <- setdiff(names(data), columns_to_exclude)
+
+# Convert selected columns to categorical
+data[columns_to_convert] <- lapply(data[columns_to_convert], as.factor)
+
+```
+ 
+\newpage
+
+# Descriptive Statistics for GPA
+
+```{r}
+# Select only numeric variables for summary statistics
+numeric_data <- data %>%
+  select_if(is.numeric)
+
+# Summary statistics for numeric variables
+summary(numeric_data)
+```
+ 
+\newpage
+
+# Distribution of GPA
+
+```{r, warning=FALSE}
+ggplot(data, aes(x = gpa)) +
+  geom_histogram(fill = "green", alpha = 0.5, bins = 40) +
+  labs(title = "Distribution of GPA", x = "", y = "")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 7))
+```
+
+\newpage
+
+# Descriptive Statistics for Categorical Variables
+
+```{r}
+# Select only categorical variables for frequency table
+categorical_data <- data %>%
+  select_if(is.factor)
+
+# Frequency table for categorical variables
+for (col in colnames(categorical_data)) {
+  print(table(categorical_data[[col]], dnn = col))
+}
+
+```
+
+\newpage 
+
+# Some Insights
+
+**Preferred Study Environments:**
+
+* Home and Library Dominance: A significant number of respondents prefer studying at home or in the library, suggesting a preference for quiet and controlled environments.
+
+* Campus Spaces: While some students opt for on-campus common spaces, the preference for classrooms, coffee shops, parks, or other outdoor spaces is relatively lower.
+
+**Background Noise Preferences:**
+
+* Diverse Noise Tolerance: Students exhibit diverse preferences for background noise, with a sizable proportion comfortable with some ambient noise. This suggests that designing flexible study spaces catering to various noise preferences could enhance the overall learning environment.
+
+* Varied Study Times: Students have diverse preferences for study times, indicating that institutions should provide flexible scheduling for classes, study sessions, and resources.
+
+**Resource Preferences:**
+
+* Interactive and Multimedia Resources: A notable preference for interactive simulations, videos, and multimedia resources implies that integrating technology and multimedia into teaching methods could be well-received.
+
+* Varied Resource Usage: Preferences for lecture notes, textbooks, and online articles vary, indicating a need for diverse resource availability.
+
+**Consumed Beverages:**
+
+* Caffeine Dominance: Coffee is the most consumed beverage. Consideration of caffeine-friendly spaces and resources may enhance student satisfaction.
+
+**Managing Stress:**
+
+* Diverse Stress Coping Mechanisms: Students employ various stress management methods, including engaging in hobbies, exercising, meditation, and spending time in nature. Institutions could provide resources and support for a variety of stress-relief activities.
+
+**Demographics and Study Patterns:**
+
+* Unemployment and Study Hours: A majority of respondents are unemployed, suggesting that institutions could provide additional support or resources for job placement. Understanding varied study hour patterns can aid in scheduling and resource allocation.
+
+**Attendance and Academic Support:**
+
+* Regular Attendance: The majority attend classes regularly. This signals an engaged student body, but institutions should continue to provide academic support and resources for those who might need additional assistance.
+
+**Academic Goals and Future Plans:**
+
+* Diverse Academic Aspirations: With diverse academic goals and future plans, institutions can tailor support services to cater to students pursuing different paths, whether it be further education, immediate employment, or exploring new interests.
+
+
+
+

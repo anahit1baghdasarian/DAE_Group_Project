@@ -1,0 +1,770 @@
+---
+title: "Correlation Analysis (20 Categorical Pairs)"
+author: "Anahit Baghdasaryan"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+# Install and load necessary libraries
+
+#install.packages("vcd")
+library(vcd)
+
+#install.packages("corrplot")
+library(corrplot)
+
+#install.packages("ggplot2")
+library(ggplot2)
+
+#install.packages("GGally")
+library(GGally)
+
+#install.packages("gridExtra")
+library(gridExtra)
+
+#install.packages("igraph")
+library(igraph)
+
+#install.packages("tidyverse")
+library(tidyverse)    # all things tidy
+
+#install.packages("haven")
+library(haven)
+
+#install.packages("pander")
+library(pander)       # nice looking genderal tabulations
+
+#install.packages("furniture")
+library(furniture)    # nice Table1() descriptives
+
+#install.packages("texreg")
+library(texreg)       # Convert Regression Output to LaTeX or HTML Tables
+
+#install.packages("psych")
+library(psych)        # contains some useful functions, like headTail
+
+#install.packages("sjstats")
+library(sjstats)      # ICC calculations
+
+#install.packages("sjPlot")
+library(sjPlot)       # Visualization for Models
+
+#install.packages("lme4")
+library(lme4)         # non-linear mixed-effects models
+
+#install.packages("lmerTest")
+library(lmerTest)
+
+#install.packages("effects")
+library(effects)      # Effect displays for Models
+
+#install.packages("effectsize")
+library(effectsize)
+
+#install.packages("interactions")
+library(interactions)
+
+#install.packages("performance")
+library(performance)
+
+#install.packages("modeest")
+library(modeest)
+
+#install.packages("DescTools")
+library(DescTools)
+
+#install.packages("vcd")
+library(vcd)
+```
+
+# Correlation Analysis
+
+## 1 Contingency table
+
+### 1.1 Definition:
+
+Contingency tables (also called crosstabs or two-ways tables) are used in statistics to summarize the relationship between categorical variables. A contingency table is a special type of frequency distribution table, where two variables are shown simultaneously.
+
+## 2 Pearson \({\chi^2}\) test
+
+### 2.1 Definition
+
+Pearson’s \({\chi^2}\) test is a statistical test applied to sets of categorical data to evaluate how likely it is that any observed difference between the sets arose by chance. It is the most widely used of many \({\chi^2}\) tests.
+
+It tests a null hypothesis stating that the frequency distribution of certain events observed in a sample is consistent with a particular theoretical
+
+## 3 Coefficients using \({\chi^2}\) statistic
+
+### 3.1 Contingency coefficient C
+
+#### 3.1.1 Definition
+
+Originally, the Pearson’s contingency coefficient is calculated as:
+
+\[ C = \sqrt{\frac{\chi^2}{\chi^2 + n}} \]
+
+with n being the total number of observations. However, there is another option to correct this contingency coefficient as:
+
+\[ C_{\text{corr}} = \frac{C}{C_{\text{max}}} = \sqrt{\frac{\min(k,l)}{\min(k,l)-1}} \sqrt{\frac{\chi^2}{\chi^2 + n}} \]
+
+with
+
+ \[ C = \sqrt{\frac{\chi^2}{\chi^2 + n}} \] and \[ C_{\text{max}} = \sqrt{\frac{\min(k,l)-1}{\min(k,l)}} \]
+ 
+where k and l are the number of categories of the two variables being compared.
+
+\newpage
+
+### 3.2 Cramer’s V
+
+### 3.2.1 Definition
+
+For a kxl contingency table, n(min(k,l)-1) is the maximal value of the \({\chi^2}\) statistic, dividing \({\chi^2}\) by the maximal value leads to a scaled version with maximal value 1. This idea is used by Cramer’s V as follow:
+
+ \[ V=\frac{x^2}{n(\min(k,l)-1)} \]
+
+\newpage
+
+# Data Preprocessing
+
+```{r}
+data <- read_csv("data_tidy.csv")
+head(data)
+```
+
+```{r}
+columns_to_exclude <- c("id", "timestamp", "field_of_study", "university", "gpa")
+
+# List of columns to convert to categorical
+columns_to_convert <- setdiff(names(data), columns_to_exclude)
+
+# Convert selected columns to categorical
+data[columns_to_convert] <- lapply(data[columns_to_convert], as.factor)
+```
+
+\newpage
+
+# Attendance and Extracurricular Activities
+
+```{r}
+# Attendance and Extracurricular Activities
+# Create a contingency table
+attendance_extracurricular <- table(data$attendance, 
+                           data$extracurricular_activities)
+
+# Display the contingency table
+print(attendance_extracurricular)
+
+# Perform a chi-squared test of independence
+chi_squared_attendance_extracurricular <- chisq.test(attendance_extracurricular)
+
+# Display the chi-squared test result
+print(chi_squared_attendance_extracurricular)
+
+# Contingency coefficient C
+ContCoef(data$attendance, data$extracurricular_activities, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data$attendance + data$extracurricular_activities))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between attendance and extracurricular activities in the given dataset. The contingency coefficient and Cramer's V values reinforce the notion of a weak association. It's important to note that the warning about the chi-squared approximation being incorrect may indicate that the sample size is small, and caution should be exercised in interpreting the results. If possible, in the future, we will consider a larger sample size for more reliable conclusions.
+
+\newpage
+# Academic Level and Eating Frequency
+
+```{r}
+#Academic Level and Eating Frequency
+# Create a contingency table
+contingency_academic_eat <- table(data$academic_level, 
+                                  data$eat_freq)
+
+# Display the contingency table
+print(contingency_academic_eat)
+
+# Perform a chi-squared test of independence
+chi_squared_academic_eat <- chisq.test(contingency_academic_eat)
+
+# Display the chi-squared test result
+print(chi_squared_academic_eat)
+
+# Contingency coefficient C
+ContCoef(data$academic_level, data$eat_freq, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data$academic_level + data$eat_freq))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between academic level and eating frequency in the given dataset. The contingency coefficient and Cramer's V values suggest a moderate association, but the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Attendance and Gender
+
+```{r}
+#Attendance and Gender
+# Create a contingency table
+contingency_attendance_gender <- table(data$attendance, 
+                                        data$gender)
+
+# Display the contingency table
+print(contingency_attendance_gender)
+
+# Perform a chi-squared test of independence
+chi_squared_attendance_gender <- chisq.test(contingency_attendance_gender)
+
+# Display the chi-squared test result
+print(chi_squared_attendance_gender)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$attendance,
+                                            data$gender, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$attendance + data$gender))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between attendance and gender in the given dataset. The contingency coefficient and Cramer's V values suggest a relatively weak association, and the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Eating Habits and Caffeine Consumption
+
+```{r}
+#Eating Habits and Caffeine Consumption
+# Create a contingency table
+contingency_eating_caffeine <- table(data$eating_habits, 
+                                     data$caffeine_freq)
+
+# Display the contingency table
+print(contingency_eating_caffeine)
+
+# Perform a chi-squared test of independence
+chi_squared_eating_caffeine <- chisq.test(contingency_eating_caffeine)
+
+# Display the chi-squared test result
+print(chi_squared_eating_caffeine)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",ContCoef(data$eating_habits,
+                                           data$caffeine_freq, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$eating_habits + data$caffeine_freq))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is a significant association between eating habits and caffeine consumption in the given dataset. The contingency coefficient and Cramer's V values suggest a moderate to strong association, and the p-value is less than 0.05, indicating that we have enough evidence to reject the null hypothesis of independence. 
+
+\newpage
+# Library Study Environment and Age
+
+```{r}
+#Library Study Environment and Age
+# Create a contingency table
+contingency_library_age <- table(data$study_env_Library, data$age)
+
+# Display the contingency table
+print(contingency_library_age)
+
+# Perform a chi-squared test of independence
+chi_squared_library_age <- chisq.test(contingency_library_age)
+
+# Display the chi-squared test result
+print(chi_squared_library_age)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",ContCoef(data$study_env_Library,
+                                           data$age, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$study_env_Library + data$age))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between the library study environment and age in the given dataset. The contingency coefficient and Cramer's V values suggest a relatively weak association, and the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence. 
+
+\newpage
+# Coffee Consumption and Caffeine Frequency
+
+```{r}
+#Coffee Consumption and Caffeine Frequency
+# Create a contingency table
+contingency_coffee_caffeine <- table(data$consumed_beverages_Coffee,
+                                     data$caffeine_freq)
+
+# Display the contingency table
+print(contingency_coffee_caffeine)
+
+# Perform a chi-squared test of independence
+chi_squared_coffee_caffeine <- chisq.test(contingency_coffee_caffeine)
+
+# Display the chi-squared test result
+print(chi_squared_coffee_caffeine)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",ContCoef(data$consumed_beverages_Coffee,
+                                           data$caffeine_freq, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$consumed_beverages_Coffee + data$caffeine_freq))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest a highly significant association between coffee consumption and caffeine frequency in the given dataset. The contingency coefficient and Cramer's V values suggest a strong association, and the p-value is extremely small, indicating strong evidence to reject the null hypothesis of independence. 
+
+\newpage
+# Tea Consumption and Caffeine Frequency
+
+```{r}
+#Tea Consumption and Caffeine Frequency
+# Create a contingency table
+contingency_tea_caffeine <- table(data$consumed_beverages_Tea,
+                                  data$caffeine_freq)
+
+# Display the contingency table
+print(contingency_tea_caffeine)
+
+# Perform a chi-squared test of independence
+chi_squared_tea_caffeine <- chisq.test(contingency_tea_caffeine)
+
+# Display the chi-squared test result
+print(chi_squared_tea_caffeine)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",ContCoef(data$consumed_beverages_Tea,
+                                           data$caffeine_freq, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$consumed_beverages_Tea + data$caffeine_freq))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between tea consumption and caffeine frequency in the given dataset. The contingency coefficient and Cramer's V values suggest a relatively weak association, and the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence. 
+
+\newpage
+# Night Study Time and Caffeine Frequency
+
+```{r}
+#Night Study Time and Caffeine Frequency
+# Create a contingency table
+contingency_night_caffeine <- table(data$study_time_Night, data$caffeine_freq)
+
+# Display the contingency table
+print(contingency_night_caffeine)
+
+# Perform a chi-squared test of independence
+chi_squared_night_caffeine <- chisq.test(contingency_night_caffeine)
+
+# Display the chi-squared test result
+print(chi_squared_night_caffeine)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",ContCoef(data$study_time_Night,
+                                           data$caffeine_freq, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$study_time_Night + data$caffeine_freq))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between night study time and caffeine frequency in the given dataset. The contingency coefficient and Cramer's V values suggest a relatively weak association, and the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence. 
+
+\newpage
+# Exercise for Stress Management and Gender
+
+```{r}
+#Exercise for Stress Management and Gender
+# Create a contingency table
+contingency_exercise_gender <- table(data$manage_stress_Exercise, data$gender)
+
+# Display the contingency table
+print(contingency_exercise_gender)
+
+# Perform a chi-squared test of independence
+chi_squared_exercise_gender <- chisq.test(contingency_exercise_gender)
+
+# Display the chi-squared test result
+print(chi_squared_exercise_gender)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$manage_stress_Exercise,
+                                            data$gender, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$manage_stress_Exercise + data$gender))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between using exercise for stress management and gender in the given dataset. The contingency coefficient and Cramer's V values suggest a relatively weak association, and the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Night Study Time and Academic Level
+
+```{r}
+#Night Study Time and Academic Level
+# Create a contingency table
+contingency_night_academic <- table(data$study_time_Night, data$academic_level)
+
+# Display the contingency table
+print(contingency_night_academic)
+
+# Perform a chi-squared test of independence
+chi_squared_night_academic <- chisq.test(contingency_night_academic)
+
+# Display the chi-squared test result
+print(chi_squared_night_academic)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$study_time_Night,
+                                            data$academic_level, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$study_time_Night + data$academic_level))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between night study time and academic level in the given dataset. The contingency coefficient and Cramer's V values suggest a very weak association, and the p-value is much greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Evening Study Time and Eating Habits
+
+```{r}
+#Evening Study Time and Eating Habits
+# Create a contingency table
+contingency_evening_eating <- table(data$study_time_Evening, data$eating_habits)
+
+# Display the contingency table
+print(contingency_evening_eating)
+
+# Perform a chi-squared test of independence
+chi_squared_evening_eating <- chisq.test(contingency_evening_eating)
+
+# Display the chi-squared test result
+print(chi_squared_evening_eating)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$study_time_Evening,
+                                            data$eating_habits, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$study_time_Evening + data$eating_habits))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between evening study time and eating habits in the given dataset. The contingency coefficient and Cramer's V values suggest a moderate association, but the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Attendance and Future Plans
+
+```{r}
+# Attendance and Future Plans
+# Create a contingency table
+contingency_attendance_plans <- table(data$attendance, data$future_plans)
+
+# Display the contingency table
+print(contingency_attendance_plans)
+
+# Perform a chi-squared test of independence
+chi_squared_attendance_plans <- chisq.test(contingency_attendance_plans)
+
+# Display the chi-squared test result
+print(chi_squared_attendance_plans)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$attendance,
+                                            data$future_plans, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$attendance + data$future_plans))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between attendance and future plans in the given dataset. The contingency coefficient and Cramer's V values suggest a moderate association, but the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Employment Status and Attendance
+
+```{r}
+#Employment Status and Attendance
+# Create a contingency table
+contingency_employment_attendance <- table(data$employment_status,
+                                           data$attendance)
+
+# Display the contingency table
+print(contingency_employment_attendance)
+
+# Perform a chi-squared test of independence
+chi_squared_employment_attendance <-
+  chisq.test(contingency_employment_attendance)
+
+# Display the chi-squared test result
+print(chi_squared_employment_attendance)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$employment_status,
+                                            data$attendance, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$employment_status + data$attendance))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between employment status and attendance in the given dataset. The contingency coefficient and Cramer's V values suggest a moderate association, but the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Extracurricular Activities and Average Sleep
+
+```{r}
+#Extracurricular Activities and Average Sleep
+# Create a contingency table
+contingency_extracurricular_sleep <- table(data$extracurricular_activities,
+                                           data$avg_sleep)
+
+# Display the contingency table
+print(contingency_extracurricular_sleep)
+
+# Perform a chi-squared test of independence
+chi_squared_extracurricular_sleep <-
+  chisq.test(contingency_extracurricular_sleep)
+
+# Display the chi-squared test result
+print(chi_squared_extracurricular_sleep)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$extracurricular_activities,
+                                            data$avg_sleep, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~data$extracurricular_activities + data$avg_sleep))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between extracurricular activities and average sleep in the given dataset. The contingency coefficient and Cramer's V values suggest a weak to moderate association, but the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Study Hours and Average Sleep
+
+```{r}
+#Study Hours and Average Sleep
+# Create a contingency table
+contingency_hours_sleep <- table(data$hours_spend_studying, data$avg_sleep)
+
+# Display the contingency table
+print(contingency_hours_sleep)
+
+# Perform a chi-squared test of independence
+chi_squared_hours_sleep <- chisq.test(contingency_hours_sleep)
+
+# Display the chi-squared test result
+print(chi_squared_hours_sleep)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$hours_spend_studying,
+                                            data$avg_sleep, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$hours_spend_studying + data$avg_sleep))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between study hours and average sleep in the given dataset. The contingency coefficient and Cramer's V values suggest a weak to moderate association, but the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Home Study Environment and Break Preferences
+
+```{r}
+#Home Study Environment and Break Preferences
+# Create a contingency table
+contingency_home_breaks <- table(data$study_env_Home, data$breaks)
+
+# Display the contingency table
+print(contingency_home_breaks)
+
+# Perform a chi-squared test of independence
+chi_squared_home_breaks <- chisq.test(contingency_home_breaks)
+
+# Display the chi-squared test result
+print(chi_squared_home_breaks)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$study_env_Home,
+                                            data$breaks, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$study_env_Home + data$breaks))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between home study environment and break preferences in the given dataset. The contingency coefficient and Cramer's V values suggest a weak association, but the p-value is greater than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Library Study Environment and Break Preferences
+
+```{r}
+#Library Study Environment and Break Preferences
+# Create a contingency table
+contingency_library_breaks <- table(data$study_env_Library, data$breaks)
+
+# Display the contingency table
+print(contingency_library_breaks)
+
+# Perform a chi-squared test of independence
+chi_squared_library_breaks <- chisq.test(contingency_library_breaks)
+
+# Display the chi-squared test result
+print(chi_squared_library_breaks)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",ContCoef(data$study_env_Library,
+                                           data$breaks, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$study_env_Library + data$breaks))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between the library study environment and break preferences in the given dataset. The contingency coefficient and Cramer's V values indicate a very weak association, and the p-value is much higher than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Lecture Notes Usage and Help from Professors
+
+```{r}
+#Lecture Notes Usage and Help from Professors
+# Create a contingency table
+contingency_lecture_help <- table(data$`resources_Lecture notes`,
+                                  data$help_from_professors)
+
+# Display the contingency table
+print(contingency_lecture_help)
+
+# Perform a chi-squared test of independence
+chi_squared_lecture_help <- chisq.test(contingency_lecture_help)
+
+# Display the chi-squared test result
+print(chi_squared_lecture_help)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",
+     ContCoef(data$`resources_Lecture notes`, data$help_from_professors,
+              correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$`resources_Lecture notes` + data$help_from_professors))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between lecture notes usage and help from professors in the given dataset. The contingency coefficient and Cramer's V values indicate a weak association, and the p-value is much higher than 0.05, indicating that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Night Study Time and Future Plans
+
+```{r}
+#Night Study Time and Future Plans
+# Create a contingency table
+contingency_night_plans <- table(data$study_time_Night, data$future_plans)
+
+# Display the contingency table
+print(contingency_night_plans)
+
+# Perform a chi-squared test of independence
+chi_squared_night_plans <- chisq.test(contingency_night_plans)
+
+# Display the chi-squared test result
+print(chi_squared_night_plans)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:", ContCoef(data$study_time_Night,
+                                            data$future_plans, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$study_time_Night + data$future_plans))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between night study time and future plans in the given dataset. The contingency coefficient and Cramer's V values indicate a weak association, and the p-value is much higher than 0.05, suggesting that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+# Home Stydy Environment and Physical Activity Frequency
+
+```{r}
+# Home Stydy Environment and Physical Activity Frequency
+# Create a contingency table
+contingency_home_activity <- table(data$study_env_Home,
+                                   data$physical_activity_freq)
+
+# Display the contingency table
+print(contingency_home_activity)
+
+# Perform a chi-squared test of independence
+chi_squared_home_activity <- chisq.test(contingency_home_activity)
+
+# Display the chi-squared test result
+print(chi_squared_home_activity)
+
+# Contingency coefficient C
+cat( "Contingency coefficient C:",
+     ContCoef(data$study_env_Home, data$physical_activity_freq, correct = TRUE))
+
+#Cramer's V and more
+assocstats(xtabs(~ data$study_env_Home + data$physical_activity_freq))
+
+```
+
+# Overall Interpretation:
+
+The chi-squared test and associated measures suggest that there is no significant association between the home study environment and physical activity frequency in the given dataset. The contingency coefficient and Cramer's V values indicate a moderate association, and the p-value is greater than 0.05, suggesting that we do not have enough evidence to reject the null hypothesis of independence.
+
+\newpage
+
+# Conclusion
+
+In summary, the majority of the analyses did not find significant associations, and where associations were detected, they tended to be weak. The interpretation should consider the context of the study and the dataset's characteristics. It's essential to recognize the limitations of the chi-squared test and association measures and interpret the results accordingly.

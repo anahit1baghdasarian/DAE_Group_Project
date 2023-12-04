@@ -1,0 +1,107 @@
+---
+title: "DAE Group Project"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("janitor")
+#install.packages("fastDummies")
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(janitor)
+library(fastDummies)
+```
+
+```{r}
+data <- read.csv('DAE_Project.csv') %>% 
+  clean_names() %>%
+  mutate(id = row_number())
+
+head(data)
+
+data_exploded <- data %>%
+  mutate(id = row_number())
+```
+
+```{r}
+columns_to_separate <- c("study_env", "background_noise", "study_time", "resources", "consumed_beverages", "manage_stress")
+
+for (i in columns_to_separate) {
+data_exploded  <- data_exploded  %>%
+  separate_rows(i, sep = ", ")}
+```
+
+```{r}
+
+fixed_responses_employment_status = c("Employed part-time", "Employed full-time", "Unemployed", "Other") #employment_status
+fixed_responses_study_space = c("Library", "Coffee shop", "Park or outdoor space", "Home", "Classroom", "Campus Common Spaces", "Other") 
+fixed_responses_resources = c("Textbooks", "Online articles and resources", "Videos and multimedia",
+                              "Lecture notes", "Interactive simulations or applications", "Other") #resources
+fixed_responses_beverages = c("Water", "Tea", "Coffee", "Energy drinks", "Soft drinks/sodas", "Other") # consumed_beverages
+fixed_responses_manage_stress = c("Exercise", "Meditation", "Listening to music", "Engaging in a hobby or creative activity",
+                                  "Spending time in nature", "Taking short breaks between study sessions",
+                                  "Watching movies or TV shows", "Hanging out with friends/family", "Other") # manage_stress
+fixed_responses_academic_goals = c("Improve grades in specific subjects", "Explore new academic interests",
+                                   "Maintain current academic standing", "Pursue advanced coursework or certifications", "Other") # academic_goals
+
+```
+
+```{r}
+# Define all fixed responses lists
+fixed_responses_lists <- list(
+  employment_status = fixed_responses_employment_status,
+  study_env = fixed_responses_study_space,
+  resources = fixed_responses_resources,
+  consumed_beverages = fixed_responses_beverages,
+  manage_stress = fixed_responses_manage_stress,
+  academic_goals = fixed_responses_academic_goals)
+
+# Loop through each column and replace values not in the fixed_responses list with "Other"
+for (column_name in names(fixed_responses_lists)) {
+  if (column_name %in% names(data_exploded)) {
+    data_exploded[[column_name]] <- ifelse(data_exploded[[column_name]] %in% fixed_responses_lists[[column_name]], 
+                                            data_exploded[[column_name]], "Other")
+  }
+}
+
+# Print the modified dataframe
+print(data_exploded)
+
+```
+
+```{r}
+for (i in c(colnames(data %>%select(c("study_env", "background_noise", "study_time", "resources", "consumed_beverages", "manage_stress"))))){
+  data_exploded <- data_exploded %>%
+  dummy_cols(select_columns = i) %>%
+  select(c(-i))
+}
+
+```
+
+```{r}
+
+result <- data_exploded %>%
+  group_by(id) %>%
+  summarize(across(starts_with("study_env_") | starts_with("background_noise_") | starts_with("study_time_") |
+                   starts_with("resources_") | starts_with("consumed_beverages_") | starts_with("manage_stress_"), 
+                   ~ ifelse(mean(.) > 0, 1, mean(.))),
+            across(!(starts_with("study_env_") | starts_with("background_noise_") |
+                   starts_with("study_time_") | starts_with("resources_") | starts_with("consumed_beverages_") |
+                   starts_with("manage_stress_")), first))
+
+# Print the result
+print(result)
+
+
+```
+
+```{r}
+write.csv(result, "data_tidy.csv", row.names = FALSE)
+```
+

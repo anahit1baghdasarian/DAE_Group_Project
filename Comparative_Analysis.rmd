@@ -1,0 +1,1330 @@
+---
+title: "Comparative Analysis"
+author: "Anahit Baghdasaryan"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+# Install and load necessary libraries
+
+#install.packages("vcd")
+library(vcd)
+
+#install.packages("corrplot")
+library(corrplot)
+
+#install.packages("ggplot2")
+library(ggplot2)
+
+#install.packages("GGally")
+library(GGally)
+
+#install.packages("gridExtra")
+library(gridExtra)
+
+#install.packages("igraph")
+library(igraph)
+
+#install.packages("tidyverse")
+library(tidyverse)    # all things tidy
+
+#install.packages("haven")
+library(haven)
+
+#install.packages("pander")
+library(pander)       # nice looking genderal tabulations
+
+#install.packages("furniture")
+library(furniture)    # nice Table1() descriptives
+
+#install.packages("texreg")
+library(texreg)       # Convert Regression Output to LaTeX or HTML Tables
+
+#install.packages("psych")
+library(psych)        # contains some useful functions, like headTail
+
+#install.packages("sjstats")
+library(sjstats)      # ICC calculations
+
+#install.packages("sjPlot")
+library(sjPlot)       # Visualization for Models
+
+#install.packages("lme4")
+library(lme4)         # non-linear mixed-effects models
+
+#install.packages("lmerTest")
+library(lmerTest)
+
+#install.packages("effects")
+library(effects)      # Effect displays for Models
+
+#install.packages("effectsize")
+library(effectsize)
+
+#install.packages("interactions")
+library(interactions)
+
+#install.packages("performance")
+library(performance)
+
+#install.packages("modeest")
+library(modeest)
+
+#install.packages("DescTools")
+library(DescTools)
+
+#install.packages("vcd")
+library(vcd)
+
+#install.packages("car")
+library(car)
+```
+
+\newpage
+
+# Comparative Analysis Plan: Good vs. Normal Performing Students
+
+## Objective:
+
+The goal of this comparative analysis is to examine the differences between good and normal performing students based on their GPAs. Good performers are defined as students with a GPA equal to or higher than 3, while normal performers have a GPA lower than 3. We will investigate the impact of various factors, including lifestyle choices, future plans and goals, study-related factors, and demographic factors, on academic performance.
+
+## Steps:
+
+**1. Data Preparation:**
+
+* Ensure the dataset is cleaned and missing values are handled appropriately.
+
+* Create a binary variable for performance: "Good" (GPA >= 3) and "Normal" (GPA < 3).
+
+**2. Descriptive Statistics:**
+
+* Provide summary statistics for GPA, considering both the overall distribution and the distribution within each performance group.
+
+**3. Data Visualization:**
+
+* Generate visualizations to compare the distributions of key features between good and normal performers.
+
+* Utilize histograms, box plots, and bar charts to visually assess differences.
+
+**4. Statistical Tests:**
+
+* Perform appropriate statistical tests to assess the associations between performance and various factors:
+
+* Chi-Squared Tests: For categorical variables (e.g., gender, academic level, attendance).
+
+* ANOVA: For continuous variables with more than two groups (e.g., GPA distribution among performance levels).
+
+**5. Linear Regression:**
+
+* Conduct linear regression to identify significant predictors of GPA.
+
+* Include relevant features.
+
+**6. Interpretation:**
+
+* Interpret the results of statistical tests and regression analyses.
+
+* Discuss any significant differences or associations found between good and normal performers.
+
+* Consider the practical implications of the findings and potential areas for further research.
+
+**7. Limitations and Recommendations:**
+
+* Highlight the limitations of the study, such as the potential impact of a small sample size.
+
+* Provide recommendations for future research based on the outcomes of this analysis.
+
+\newpage
+
+# Data Preparation
+
+```{r}
+data <- read_csv("data_tidy.csv")
+head(data)
+```
+
+\newpage
+
+```{r}
+columns_to_exclude <- c("id", "timestamp", "field_of_study", "university", "gpa")
+
+# List of columns to convert to categorical
+columns_to_convert <- setdiff(names(data), columns_to_exclude)
+
+# Convert selected columns to categorical
+data[columns_to_convert] <- lapply(data[columns_to_convert], as.factor)
+```
+
+```{r}
+# Create a new column 'performance' based on GPA
+data$performance <- ifelse(data$gpa < 3.0, "normal", "good")
+
+# Convert the 'performance' column to a factor for better representation
+data$performance <- factor(data$performance, levels = c("normal", "good"))
+
+# View specific columns
+head(data[c('id', 'gpa', 'performance')])
+```
+
+```{r}
+# Create a new dataset excluding rows with NA values in 'performance'
+data_no_na_performance <- data[complete.cases(data$performance), ]
+```
+
+\newpage
+
+# Descriptive Statistics
+
+```{r}
+# Summary statistics for the overall distribution of GPA
+overall_summary <- summary(data_no_na_performance$gpa)
+
+# Summary statistics for the distribution within each performance group
+group_summary <- data_no_na_performance %>%
+  group_by(performance) %>%
+  summarise(
+    Mean_GPA = mean(gpa),
+    Median_GPA = median(gpa),
+    SD_GPA = sd(gpa),
+    Min_GPA = min(gpa),
+    Max_GPA = max(gpa)
+  )
+
+# Display the results
+cat("Overall GPA Summary:\n", overall_summary, "\n\n")
+
+cat("GPA Summary within Each Performance Group:\n")
+
+print(group_summary)
+
+```
+
+\newpage
+
+## Overall GPA Summary:
+
+**Minimum GPA:** 2.0
+
+**1st Quartile (25th percentile):** 2.9
+
+**Median (50th percentile):** 3.4
+
+**Mean:** 3.288352
+
+**3rd Quartile (75th percentile):** 3.8
+
+**Maximum GPA:** 4.0
+
+## GPA Summary within Each Performance Group:
+
+## **For "Normal" Performance Group:**
+
+**Mean GPA:** 2.535231
+
+**Median GPA:** 2.55
+
+**Standard Deviation:** 0.3002016
+
+**Minimum GPA:** 2.0
+
+**Maximum GPA:** 2.98
+
+## **For "Good" Performance Group:**
+
+**Mean GPA:** 3.604177
+
+**Median GPA:** 3.70
+
+**Standard Deviation:** 0.3026630
+
+**Minimum GPA:** 3.0
+
+**Maximum GPA:** 4.0
+
+
+## Interpretation:
+
+The overall GPA distribution has a mean of approximately 3.29, with a median of 3.4.
+
+The "Normal" performance group has a lower mean GPA of approximately 2.54, indicating lower academic performance, while the "Good" performance group has a higher mean GPA of approximately 3.60, indicating better academic performance.
+
+The standard deviation within each group suggests the degree of variability in GPA scores. "Good" performance has a slightly higher standard deviation than the "Normal" group.
+
+The median is the middle value in the distribution, and it is lower in the "Normal" group (2.55) compared to the "Good" group (3.70).
+
+\newpage
+
+# Data Visualization and Statistical Tests (Chi-Squared Tests)
+
+## Performance Distribution
+
+```{r}
+
+# Create a bar plot
+ggplot(data_no_na_performance, aes(x = performance, fill = performance)) +
+  geom_bar(alpha = 0.7) +
+  labs(title = "Performance Comparison",
+       x = "Performance",
+       y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+\newpage
+
+# GPA Distribution and Performance
+
+```{r}
+# Create a box plot
+ggplot(data_no_na_performance, aes(x = performance, y = gpa, fill = performance)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(title = "GPA Distribution by Performance",
+       x = "",
+       y = "GPA",
+       fill = "Performance") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())+
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+\newpage
+
+# Study Hours and Performance
+
+```{r}
+# Create a box plot of study hours by performance
+ggplot(data_no_na_performance, aes(x = hours_spend_studying, fill = performance)) +
+  geom_bar(alpha = 0.7, position = "dodge") +
+  labs(title = "Study Hours by Performance",
+       x = "Study Hours",
+       y = "Count",
+       fill = "Performance") +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 40, size = 6, h = 1))+
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_study_hours <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$hours_spend_studying)
+
+# Display the contingency table
+print(performance_study_hours)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_study_hours <- chisq.test(performance_study_hours)
+
+# Display the chi-squared test result
+print(chi_squared_performance_study_hours)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$hours_spend_studying, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$hours_spend_studying))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the relationship between study hours and academic performance suggests that there is no statistically significant association in the given dataset (p-value = 0.5622). The contingency coefficient and Cramer's V indicate a moderate, yet not particularly strong, association between the two variables.
+
+\newpage
+
+# Extracurricular Activities and Performance
+
+```{r}
+# Create a bar plot of extracurricular activities by performance
+ggplot(data_no_na_performance, aes(x = extracurricular_activities, fill = performance)) +
+  geom_bar(position = "stack", alpha = 0.7) +
+  labs(title = "Extracurricular Activities by Performance",
+       x = "Extracurricular Activities",
+       y = "Count",
+       fill = "Performance") +
+  facet_wrap(~performance, scales = "free_y")+
+  theme_minimal()+
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_extracurricular_activities <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$extracurricular_activities)
+
+# Display the contingency table
+print(performance_extracurricular_activities)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_extracurricular_activities <- 
+  chisq.test(performance_extracurricular_activities)
+
+# Display the chi-squared test result
+print(chi_squared_performance_extracurricular_activities)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$extracurricular_activities, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$extracurricular_activities))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and participation in extracurricular activities reveals no statistically significant relationship (p-value = 0.2082). The contingency coefficient and Cramer's V suggest a weak to moderate association, indicating that academic performance may have some dependence on involvement in extracurricular activities, though this association is not particularly strong.
+
+\newpage
+
+# Breaks by Performance
+
+```{r}
+# Create a bar plot of breaks by performance
+ggplot(data_no_na_performance, aes(x = performance, fill = performance)) +
+  geom_bar(position = "stack", alpha = 0.7) +
+  labs(title = "Breaks by Performance",
+       x = "",
+       y = "Count",
+       fill = "Performance") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),  # Remove x-axis text
+        axis.ticks.x = element_blank(),  # Remove x-axis ticks
+        strip.text.x = element_text(size = 8, angle = 0)) +  # Adjust facet text size and angle
+  facet_wrap(~breaks, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_breaks <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$breaks)
+
+# Display the contingency table
+print(performance_breaks)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_breaks <- 
+  chisq.test(performance_breaks)
+
+# Display the chi-squared test result
+print(chi_squared_performance_breaks)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$breaks, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$breaks))
+```
+
+# Overall Interpretation:
+
+The chi-squared test investigating the relationship between academic performance and preferences for break duration did not yield statistically significant results (p-value = 0.5044). The contingency coefficient and Cramer's V indicate a weak association, suggesting that the choice of break duration may have some influence on academic performance, but this relationship is not strong.
+
+\newpage
+
+# Future Plans and Performance
+
+```{r}
+# Bar plot for future plans
+ggplot(data_no_na_performance, aes(x = future_plans, fill = performance)) +
+  geom_bar(position = "dodge", alpha = 0.7) +
+  labs(title = "Future Plans by Performance",
+       x = "Do you plan to pursue further education after completing your current academic program?",
+       y = "",
+       fill = "Performance") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, size = 5),
+        axis.title.x=element_text(size=9))+
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_future_plans <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$future_plans)
+
+# Display the contingency table
+print(performance_future_plans)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_future_plans <- 
+  chisq.test(performance_future_plans)
+
+# Display the chi-squared test result
+print(chi_squared_performance_future_plans)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$future_plans, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$future_plans))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and future plans did not reveal statistically significant results (p-value = 0.264). The contingency coefficient and Cramer's V suggest a weak association, implying that the future plans of students may have some influence on their academic performance, but this relationship is not substantial. 
+
+\newpage
+
+# Academic Goals and Performance
+
+```{r}
+# Stacked bar plot for academic goals
+ggplot(data_no_na_performance, aes(x = performance, fill = performance)) +
+  geom_bar(alpha = 0.7) +
+  labs(title = "Academic Goals by Performance",
+       x = "Performance",
+       y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        strip.text = element_text(size = 6)) +  # Adjust facet text size and angle
+  facet_wrap(~academic_goals, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_academic_goals <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$academic_goals)
+
+# Display the contingency table
+print(performance_academic_goals)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_academic_goals <- 
+  chisq.test(performance_academic_goals)
+
+# Display the chi-squared test result
+print(chi_squared_performance_academic_goals)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$academic_goals, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$academic_goals))
+```
+
+# Overall Interpretation:
+
+The chi-squared test investigating the association between academic performance and academic goals yielded interesting but marginally significant results (p-value = 0.06261). The contingency coefficient and Cramer's V indicate a moderate association. The data suggests that students with different academic goals may exhibit variations in their academic performance. While the findings are not strongly significant, they hint at a potential relationship that warrants further exploration. 
+
+\newpage
+
+# Performance and Physical Activity Frequency
+
+```{r}
+# Pie chart for physical activity frequency
+ggplot(data_no_na_performance, aes(x = "", fill = performance)) +
+  geom_bar(width = 1, position = "fill", alpha = 0.7) +
+  coord_polar("y") +
+  labs(title = "Performance by Physical Activity Frequency",
+       fill = "Performance",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),  # Remove x-axis text
+        axis.ticks.x = element_blank(),  # Remove x-axis ticks
+        strip.text.x = element_text(size = 8, angle = 0)) +  # Adjust facet text size and angle
+  facet_wrap(~physical_activity_freq) +
+  scale_fill_manual(values = c("yellow", "green"))
+
+
+```
+
+```{r}
+# Create a contingency table
+performance_physical_activity_freq <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$physical_activity_freq)
+
+# Display the contingency table
+print(performance_physical_activity_freq)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_physical_activity_freq <- 
+  chisq.test(performance_physical_activity_freq)
+
+# Display the chi-squared test result
+print(chi_squared_performance_physical_activity_freq)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$physical_activity_freq, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$physical_activity_freq))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and physical activity frequency did not reveal a significant relationship (p-value = 0.5695). The contingency coefficient and Cramer's V values indicate a weak association, suggesting that there is no strong evidence to support a link between physical activity frequency and academic performance in the provided dataset.
+
+\newpage
+
+# Caffeine Frequency and Performance
+
+```{r}
+# Bar plot for caffeine frequency
+ggplot(data_no_na_performance, aes(x = caffeine_freq, fill = performance)) +
+  geom_bar(position = "dodge", alpha = 0.7) +
+  labs(title = "Caffeine Frequency by Performance",
+       x = "Caffeine Frequency",
+       y = "",
+       fill = "Performance") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, size = 5))+
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_caffeine_freq <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$caffeine_freq)
+
+# Display the contingency table
+print(performance_caffeine_freq)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_caffeine_freq <- 
+  chisq.test(performance_caffeine_freq)
+
+# Display the chi-squared test result
+print(chi_squared_performance_caffeine_freq)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$caffeine_freq, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$caffeine_freq))
+```
+
+# Overall Interpretation:
+
+The chi-squared test assessing the association between academic performance and caffeine consumption frequency did not yield a statistically significant relationship (p-value = 0.5941). The contingency coefficient and Cramer's V values, both indicating a weak association, suggest that there is no strong evidence supporting a link between caffeine consumption frequency and academic performance in the given dataset. 
+
+\newpage
+
+# Eating Frequency and Performance
+
+```{r}
+# Stacked bar plot for eating frequency
+ggplot(data_no_na_performance, aes(x = eat_freq, fill = performance)) +
+  geom_bar(position = "stack", alpha = 0.7) +
+  labs(title = "Eating Frequency by Performance",
+       x = "Eating Frequency",
+       y = "",
+       fill = "Performance") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, size = 5))+
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_eat_freq <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$eat_freq)
+
+# Display the contingency table
+print(performance_eat_freq)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_eat_freq<- 
+  chisq.test(performance_eat_freq)
+
+# Display the chi-squared test result
+print(chi_squared_performance_eat_freq)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$eat_freq, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$eat_freq))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and eating frequency did not reveal statistically significant results (p-value = 0.7298). The contingency coefficient and Cramer's V values, both indicating a weak association, suggest that there is no strong evidence supporting a link between eating frequency and academic performance in the given dataset.
+
+\newpage
+
+# Performance and Eating Habits
+
+```{r}
+# Stacked bar chart for eating habits
+ggplot(data_no_na_performance, aes(x = eating_habits, fill = performance)) +
+  geom_bar(position = "dodge", alpha = 0.7) +
+  labs(title = "Performance by Eating Habits",
+       fill = "Performance",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),  # Remove x-axis text
+        axis.ticks.x = element_blank(),  # Remove x-axis ticks
+        strip.text.x = element_text(size = 8, angle = 0)) +
+  facet_wrap(~eating_habits, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_eating_habits <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$eating_habits)
+
+# Display the contingency table
+print(performance_eating_habits)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_eating_habits<- 
+  chisq.test(performance_eating_habits)
+
+# Display the chi-squared test result
+print(chi_squared_performance_eating_habits)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$eating_habits, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$eating_habits))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and eating habits did not reveal statistically significant results (p-value = 0.3657). The contingency coefficient and Cramer's V values, both indicating a weak association, suggest that there is no strong evidence supporting a link between eating habits and academic performance in the given dataset. 
+
+\newpage
+
+# Performance and Average Sleep
+
+```{r}
+# Box plot for average sleep
+ggplot(data_no_na_performance, aes(x = performance, y = gpa, fill = performance)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(title = "Performance by Average Sleep",
+       y = "GPA",
+       fill = "Performance") +
+  theme_minimal() +
+   theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),  # Remove x-axis text
+        axis.ticks.x = element_blank(),  # Remove x-axis ticks
+        strip.text.x = element_text(size = 8, angle = 0)) +
+  facet_wrap(~avg_sleep, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_avg_sleep <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$avg_sleep)
+
+# Display the contingency table
+print(performance_avg_sleep)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_avg_sleep<- 
+  chisq.test(performance_avg_sleep)
+
+# Display the chi-squared test result
+print(chi_squared_performance_avg_sleep)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$avg_sleep, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$avg_sleep))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and average sleep duration did not reveal statistically significant results (p-value = 0.507). The contingency coefficient and Cramer's V values, both indicating a weak association, suggest that there is no strong evidence supporting a significant link between average sleep duration and academic performance in the given dataset.
+
+\newpage
+
+# Performance and Studying in Groups
+
+```{r}
+# Pie chart for studying in groups
+ggplot(data_no_na_performance, aes(x = "", fill = performance)) +
+  geom_bar(width = 1, position = "fill", alpha = 0.7) +
+  coord_polar("y") +
+  labs(title = "Performance by Studying in Groups",
+       fill = "Performance",
+       x = "") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),  # Remove x-axis text
+        axis.ticks.x = element_blank(),  # Remove x-axis ticks
+        strip.text.x = element_text(size = 7, angle = 0)) +
+  facet_wrap(~studying_in_groups) +
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_studying_in_groups <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$studying_in_groups)
+
+# Display the contingency table
+print(performance_studying_in_groups)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_studying_in_groups<- 
+  chisq.test(performance_studying_in_groups)
+
+# Display the chi-squared test result
+print(chi_squared_performance_studying_in_groups)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$studying_in_groups, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$studying_in_groups))
+```
+
+# Overall Interpretation:
+
+The chi-squared test investigating the association between academic performance and studying preferences (studying alone, enjoying occasional group study sessions, or regularly studying in a group) resulted in a p-value of 0.07884, suggesting that the relationship is not statistically significant. While the p-value is close to the conventional significance threshold of 0.05, caution is warranted due to the warning about the chi-squared approximation being incorrect, likely due to a smaller sample size. The contingency coefficient and Cramer's V values imply a moderate association, emphasizing the importance of further exploration with a larger and more diverse sample to draw more reliable conclusions about the impact of studying preferences on academic performance.
+
+\newpage
+
+# Performance and Help from Professors
+
+```{r}
+# Stacked bar chart for help from professors
+ggplot(data_no_na_performance, aes(x = performance, fill=performance))+
+  geom_bar(alpha = 0.8)+
+  labs(title = "Performance by Help from Professors",
+       x = "Performance",
+       y = "") +
+  theme_minimal() +
+    theme(legend.position = "none",
+        strip.text = element_text(size = 6)) +  # Adjust facet text size and angle
+  facet_wrap(~help_from_professors, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_help_from_professors <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$help_from_professors)
+
+# Display the contingency table
+print(performance_help_from_professors)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_help_from_professors<- 
+  chisq.test(performance_help_from_professors)
+
+# Display the chi-squared test result
+print(chi_squared_performance_help_from_professors)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$help_from_professors, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$help_from_professors))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the relationship between academic performance and the frequency of seeking help from professors yielded a p-value of 0.117, indicating that there is no statistically significant association between these two variables. The contingency coefficient and Cramer's V values suggest a moderate association, but the cautionary note about the chi-squared approximation being incorrect should be taken into consideration, potentially due to a smaller sample size. 
+
+\newpage
+
+# Performance and Attendance
+
+```{r}
+# Bar chart for attendance
+ggplot(data_no_na_performance, aes(x = performance, fill=performance))+
+  geom_bar(alpha = 0.8)+
+  labs(title = "Performance by Attendance",
+       x = "Performance",
+       y = "") +
+  theme_minimal() +
+    theme(legend.position = "none",
+        strip.text = element_text(size = 6)) +  # Adjust facet text size and angle
+  facet_wrap(~attendance, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_attendance <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$attendance)
+
+# Display the contingency table
+print(performance_attendance)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_attendance<- 
+  chisq.test(performance_attendance)
+
+# Display the chi-squared test result
+print(chi_squared_performance_attendance)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$attendance, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$attendance))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and attendance revealed a highly significant p-value of 0.0001459, indicating a strong relationship between these variables. Both the contingency coefficient (0.433) and Cramer's V (0.48) underscore this significant association, suggesting that attendance plays a substantial role in predicting academic performance. The warning about the chi-squared approximation being incorrect might be due to the sample size, emphasizing the need for cautious interpretation. Nonetheless, based on this analysis, maintaining regular attendance seems to be a crucial factor positively impacting academic performance.
+
+\newpage
+
+# Performance and Employment Status
+
+```{r}
+# Stacked bar chart for employment status
+ggplot(data_no_na_performance, aes(x = performance, fill = performance)) +
+  geom_bar(position = "dodge", alpha = 0.7) +
+  labs(title = "Performance by Employment Status",
+       x = "Performance",
+       y = "") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        strip.text = element_text(size = 6)) +  # Adjust facet text size and angle
+  facet_wrap(~employment_status, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+```
+
+```{r}
+# Create a contingency table
+performance_employment_status <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$employment_status)
+
+# Display the contingency table
+print(performance_employment_status)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_employment_status<- 
+  chisq.test(performance_employment_status)
+
+# Display the chi-squared test result
+print(chi_squared_performance_employment_status)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$employment_status, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$employment_status))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and employment status resulted in a p-value of 0.6174, indicating no significant relationship between these variables. The contingency coefficient (0.104) and Cramer's V (0.105) values further support the notion of a weak association.
+
+\newpage
+
+# Performance and Academic Level
+
+```{r}
+# Stacked bar chart for academic level
+ggplot(data_no_na_performance, aes(x = performance, fill=performance))+
+  geom_bar(alpha = 0.8)+
+  labs(title = "Performance by Academic Level",
+       x = "Performance",
+       y = "") +
+  theme_minimal() +
+    theme(legend.position = "none",
+        strip.text = element_text(size = 6)) +  # Adjust facet text size and angle
+  facet_wrap(~academic_level, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_academic_level <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$academic_level)
+
+# Display the contingency table
+print(performance_academic_level)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_academic_level<- 
+  chisq.test(performance_academic_level)
+
+# Display the chi-squared test result
+print(chi_squared_performance_academic_level)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$academic_level, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$academic_level))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and academic level resulted in a p-value of 0.3794, indicating no significant relationship between these variables. The contingency coefficient (0.213) and Cramer's V (0.219) values further support the notion of a weak association. 
+
+\newpage
+
+# Performance and Age
+
+```{r}
+# Stacked bar chart for age
+ggplot(data_no_na_performance, aes(x = performance, fill=performance))+
+  geom_bar(alpha = 0.8)+
+  labs(title = "Performance by Age",
+       x = "Performance",
+       y = "") +
+  theme_minimal() +
+    theme(legend.position = "none",
+        strip.text = element_text(size = 6)) +  # Adjust facet text size and angle
+  facet_wrap(~age, scales = "free_y") +
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_age <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$age)
+
+# Display the contingency table
+print(performance_age)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_age<- 
+  chisq.test(performance_age)
+
+# Display the chi-squared test result
+print(chi_squared_performance_age)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$age, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$age))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and age resulted in a p-value of 0.7285, indicating no significant relationship between these variables. The contingency coefficient (0.121) and Cramer's V (0.122) values suggest a weak association.
+
+\newpage
+
+# Performance and Gender
+
+```{r}
+# Stacked bar chart for gender
+ggplot(data_no_na_performance, aes(x = performance, fill=performance))+
+  geom_bar(alpha = 0.8)+
+  coord_polar("y") +
+  labs(title = "Performance by Gender",
+       x = "",
+       y = "",
+       fill = "Performance") +
+  theme_minimal() +
+    theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),  
+        axis.ticks.y = element_blank(),  
+        strip.text.y = element_text(size = 7, angle = 0)) + 
+  facet_wrap(~gender) +
+  scale_fill_manual(values = c("yellow", "green"))
+
+```
+
+```{r}
+# Create a contingency table
+performance_gender <- table(data_no_na_performance$performance, 
+                           data_no_na_performance$gender)
+
+# Display the contingency table
+print(performance_gender)
+
+# Perform a chi-squared test of independence
+chi_squared_performance_gender<- 
+  chisq.test(performance_gender)
+
+# Display the chi-squared test result
+print(chi_squared_performance_gender)
+
+# Contingency coefficient C
+ContCoef(data_no_na_performance$performance,
+         data_no_na_performance$gender, correct = TRUE)
+
+#Cramer's V and more
+assocstats(xtabs(~data_no_na_performance$performance + 
+                   data_no_na_performance$gender))
+```
+
+# Overall Interpretation:
+
+The chi-squared test examining the association between academic performance and gender yielded a p-value of 0.1055, suggesting no statistically significant association between these variables. The contingency coefficient (0.195) and Cramer's V (0.199) values indicate a weak association. 
+
+\newpage
+
+# Conclusion 
+
+Overall Conclusion on Associations with Performance:
+In the analyses exploring the association between academic performance and various factors, including study-related habits, lifestyle choices, and demographic variables, the chi-squared tests consistently yielded p-values suggesting no statistically significant association. The contingency coefficients and Cramer's V values were generally low, indicating weak associations.
+
+## Study-Related Factors:
+
+**Study Hours:** No significant association (p = 0.5622).
+
+**Extracurricular Activities:** No significant association (p = 0.2082).
+
+**Breaks:** No significant association (p = 0.5044).
+
+**Studying in Groups:** Marginally significant association (p = 0.07884).
+
+**Help from Professors:** No significant association (p = 0.117).
+
+**Attendance:** Significant association (p = 0.0001459).
+
+## Lifestyle Choices:
+
+**Physical Activity Frequency:** No significant association (p = 0.5695).
+
+**Caffeine Consumption:** No significant association (p = 0.5941).
+
+**Eating Frequency:** No significant association (p = 0.7298).
+
+**Eating Habits:** No significant association (p = 0.3657).
+
+**Average Sleep:** No significant association (p = 0.507).
+
+## Future Plans and Goals:
+
+**Future Education Plans:** No significant association (p = 0.264).
+
+**Academic Goals:** Marginally significant association (p = 0.06261).
+
+
+## Other Demographic Factors:
+
+**Age:** No significant association (p = 0.7285).
+
+**Gender:** No significant association (p = 0.1055).
+
+**Academic Level:** No significant association (p = 0.3794).
+
+**Employment Status:** No significant association (p = 0.6174).
+
+
+In summary, based on the analyses, there is a lack of compelling evidence to suggest a strong association between academic performance and the examined variables. It's important to note the potential limitations of these findings, such as the small sample size and the assumption of independence between observations. Future investigations with larger and more diverse samples may provide more robust insights into the complex interplay of factors influencing academic performance.
+
+\newpage
+
+# Linear Regression 
+
+```{r}
+# Create a linear regression model
+#Through iterative training process this is our best model
+
+linear_model <-
+  lm(gpa ~ .,data =data_no_na_performance[, c("gpa", "attendance",
+                                              "academic_goals",
+                                              "studying_in_groups",
+                                              "gender",
+                                              "study_time_Night",
+                                              "resources_Interactive simulations or applications",
+                                              "consumed_beverages_Coffee",
+                                              "manage_stress_Meditation",
+                                              "manage_stress_Other")])
+
+# Display the summary of the linear regression model
+summary(linear_model)
+
+```
+
+\newpage
+
+## Interpretation:
+
+Students who always or most of the time attend to classes, prefer studying alone and at night time, manage stress through meditation or in other alternative ways, and consume coffee tend to have higher GPAs, according to this model.
+
+## Coefficients:
+
+**Intercept (2.32465):**
+
+* The intercept represents the estimated GPA when all predictor variables are zero.
+
+* In this context, it is the estimated GPA for a hypothetical student who occasionally attends classes, has no specific academic goals, prefers occasionally studying in groups, is female, doesn't study at night, and doesn't use interactive simulations or applications, coffee, meditation, or other stress management methods.
+
+**Attendance:**
+
+* "attendanceYes, always" (0.77279): Students who always attend have, on average, a GPA higher by 0.77 compared to those who rarely attend.
+
+* "attendanceYes, most of the time" (0.47738): Students who attend most of the time have, on average, a GPA higher by 0.48 compared to those who
+attend occasionally.
+
+**Academic Goals:**
+
+* "academic_goalsImprove grades in specific subjects" (-0.30964): Students with the goal of improving grades in specific subjects, on average, have a lower GPA by 0.31 compared to those with other goals.
+
+**Studying in Groups:**
+
+* "studying_in_groupsPrefer studying alone" (0.27055): Students who prefer studying alone have, on average, a higher GPA by 0.27 compared to those who prefer studying in a group regularly.
+
+**Study Time at Night:**
+
+* "study_time_Night1" (0.31634): Students who study at night have, on average, a higher GPA by 0.32 compared to those who don't study at night.
+
+**Resources - Interactive Simulations or Applications:**
+
+* "resources_Interactive simulations or applications1" (-0.22185): Students who use interactive simulations or applications have, on average, a lower GPA by 0.22 compared to those who don't use these resources.
+
+**Consumed Beverages - Coffee:**
+
+* "consumed_beverages_Coffee1" (0.21302): Students who consume coffee have, on average, a higher GPA by 0.21 compared to those who don't consume coffee.
+
+**Manage Stress:**
+
+* "manage_stress_Meditation1" (0.33948): Students who manage stress through meditation have, on average, a higher GPA by 0.34 compared to those who don't use meditation for stress management.
+
+* "manage_stress_Other1" (0.41063): Students who manage stress through other methods (not specified) have, on average, a higher GPA by 0.41 compared to those who don't use other stress management methods.
+
+Overall, the model appears to have some degree of explanatory power, as indicated by the significant F-statistic and a moderate multiple R-squared. However, the adjusted R-squared suggests that not all included predictors contribute meaningfully to the model. It's important to consider the context of the study, the assumptions of the linear regression model, and potential limitations when interpreting and applying these results. Further exploration, validation, and consideration of alternative models may be warranted.
+
+
+\newpage
+
+# ANOVA
+
+An ANOVA (Analysis of Variance) test is typically used to compare the means of three or more groups to determine if there are statistically significant differences among them.
+
+## Set Up Hypotheses:
+
+* Null Hypothesis (H0): There is no significant difference in GPA distributions among the "normal" and "good" performance groups.
+
+* Alternative Hypothesis (Ha): There is a significant difference in GPA distributions among the "normal" and "good" performance groups.
+
+## Check Assumptions:
+
+ANOVA assumes that the populations being compared have normal distributions and equal variances. You may want to visually inspect the distributions and consider conducting a normality test and a test for homogeneity of variances.
+
+```{r}
+model <- lm(gpa ~ performance, data = data_no_na_performance)
+```
+
+```{r}
+# 1. Check Assumption of Homogeneity of Variances
+plot(model, which = 1)
+
+# 2. Check Assumption of Normality of Residuals
+shapiro.test(residuals(model))
+qqnorm(residuals(model))
+qqline(residuals(model)) # Check for Linearity
+
+```
+\newpage 
+
+# Interpretation
+
+## Shapiro-Wilk test
+
+The Shapiro-Wilk test is a statistical test used to assess whether a sample of data comes from a normal distribution. In your output, the test statistic (W) is 0.93559, and the p-value is 0.0002833.
+
+Here's what output suggests:
+
+* Null Hypothesis (H0): The data follows a normal distribution.
+
+* Alternative Hypothesis (H1): The data does not follow a normal distribution.
+
+Since the p-value is less than the typical significance level of 0.05, you would reject the null hypothesis. In other words, there is evidence to suggest that the residuals from your model are not normally distributed.
+
+## Assumption of Homogeneity of Variances
+
+The assumption of homogeneity of variances (HOV) states that the variance of the dependent variable is the same across all levels of the independent variable. This assumption is important for many statistical tests, such as the independent samples t-test and ANOVA.
+
+One way to check for HOV is to look at a residuals versus fitted values plot. If the points are evenly distributed around the zero line, then HOV is likely met. However, if there is a fan-shaped pattern, then HOV is likely violated.
+
+The residuals versus fitted values plot shows a fan-shaped pattern, indicating that HOV is likely violated. This means that the variance of the dependent variable (GPA performance) is not the same across all levels of the independent variable (fitted values).
+
+We plan to use a statistical test that assumes HOV, we should take steps to address the violation. 
+
+## QQ-plot
+
+The normal Q-Q plot does not show a straight line, which indicates that the linearity assumption is likely violated. This means that the relationship between the independent and dependent variables is not linear.
+
+## Box-Cox Transformation
+
+The Box-Cox transformation is a family of power transformations that are used to stabilize the variance and make a dataset more closely approximate a normal distribution. It is particularly useful when dealing with data that violates the assumption of constant variance (heteroscedasticity) or non-normality.
+
+The Box-Cox transformation is defined as:
+
+\[ y(\lambda) = \begin{cases} \frac{{y^\lambda - 1}}{\lambda}, & \text{if } \lambda \neq 0 \\ \log(y), & \text{if } \lambda = 0 \end{cases} \]
+
+Here, \( y \) is the original response variable, and \( \lambda \) is the transformation parameter. The optimal value of \( \lambda \) is chosen to maximize the log-likelihood function, resulting in the most normal and homoscedastic residuals.
+
+```{r}
+# Perform double normalization transformation
+model <- lm(BoxCox(BoxCox(gpa, lambda = 0), lambda = 0) ~ performance, data = data_no_na_performance)
+
+# Shapiro-Wilk normality test on residuals
+shapiro_test <- shapiro.test(residuals(model))
+print(shapiro_test)
+
+```
+
+## Shapiro-Wilk normality test
+
+W statistic is 0.9656 and the p-value is 0.01945. This means that there is some evidence to suggest that the data is not normally distributed. However, the p-value is not quite as low as 0.05, which is the conventional level of significance. This means that you cannot reject the null hypothesis that the data is normally distributed with absolute certainty.
+
+```{r}
+qqnorm(residuals(model))
+qqline(residuals(model)) # Check for Linearity
+```
+
+## Perform ANOVA
+
+```{r}
+anova_result <- anova(model)
+print(anova_result)
+```
+
+**Interpretation:**
+
+The analysis suggests that there is a significant effect of the 'performance' variable on the Box-Cox transformed GPA. The low p-value (< 0.001) indicates strong evidence against the null hypothesis, supporting the conclusion that there is a meaningful relationship. There is a significant difference in GPA distributions among the "normal" and "good" performance groups. The F-statistic of 237 further reinforces the strength of this relationship.
