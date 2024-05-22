@@ -1,4 +1,4 @@
-# DAE | Group Project
+# Design and Analysis of Experiments | Group Project
 
 ## Justification of the Project:
 
